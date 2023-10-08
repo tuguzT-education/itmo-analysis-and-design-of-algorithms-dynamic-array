@@ -1,5 +1,5 @@
-#ifndef LAB_2_ARRAY
-#define LAB_2_ARRAY
+#ifndef LAB2_ARRAY
+#define LAB2_ARRAY
 
 #include <cstddef>
 
@@ -22,8 +22,10 @@ class Array final {
     using ReverseIterator = Iterator;
     using ConstReverseIterator = ConstIterator;
 
-    Array();
-    Array(SizeType capacity);
+    explicit Array();
+    explicit Array(SizeType capacity);
+
+    ~Array();
 
     Array(const Array &other);
     Array &operator=(const Array &other);
@@ -60,8 +62,6 @@ class Array final {
     ConstReverseIterator rend() const noexcept;
     ConstReverseIterator rcend() const noexcept;
 
-    ~Array();
-
   private:
     Pointer buffer_;
     SizeType size_;
@@ -71,7 +71,7 @@ class Array final {
 template<class T>
 class Array<T>::Iterator final {
   public:
-    constexpr Iterator(const Array &array, bool reversed) noexcept;
+    constexpr explicit Iterator(const Array &array, bool reversed) noexcept;
 
     ConstReference get() const noexcept;
     void set(ConstReference value);
@@ -96,7 +96,7 @@ class Array<T>::Iterator final {
 template<class T>
 class Array<T>::ConstIterator final {
   public:
-    constexpr ConstIterator(const Array &array, bool reversed) noexcept;
+    constexpr explicit ConstIterator(const Array &array, bool reversed) noexcept;
 
     ConstReference get() const noexcept;
 
@@ -117,4 +117,6 @@ class Array<T>::ConstIterator final {
 
 }
 
-#endif //LAB_2_ARRAY
+#include "Array.inl"
+
+#endif //LAB2_ARRAY
