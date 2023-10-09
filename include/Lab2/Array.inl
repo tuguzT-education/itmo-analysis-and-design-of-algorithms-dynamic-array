@@ -14,6 +14,8 @@ namespace detail {
 template<class T>
 static inline constexpr Array<T>::SizeType kDefaultCapacity = 8;
 
+static inline constexpr auto kExponentialGrowthFactor = 2.0f;
+
 template<class T>
 static inline T *MemAlloc(const std::size_t capacity) {
     if (capacity == 0) {
@@ -91,6 +93,21 @@ Array<T> &Array<T>::operator=(Array &&other) noexcept {
 }
 
 template<class T>
+Array<T>::SizeType Array<T>::insert(ConstReference value) {
+    if (size_ == capacity_) [[unlikely]] {
+        const auto capacity = capacity_ == 0
+                              ? detail::kDefaultCapacity<T>
+                              : static_cast<SizeType>(capacity_ * detail::kExponentialGrowthFactor);
+        reserve(capacity);
+        if (size_ == capacity_) {
+            return -1;
+        }
+    }
+    detail::CopyInPlace(value, buffer_ + size_);
+    return size_++;
+}
+
+template<class T>
 Array<T>::ConstReference Array<T>::operator[](const Array::SizeType index) const noexcept {
     assert_message(index < size_, "index should be less than size");
     return buffer_[index];
@@ -110,6 +127,21 @@ Array<T>::SizeType Array<T>::size() const noexcept {
 template<class T>
 Array<T>::SizeType Array<T>::capacity() const noexcept {
     return capacity_;
+}
+
+template<class T>
+void Array<T>::reserve(const Array::SizeType capacity) {
+    if (capacity <= capacity_) {
+        return;
+    }
+    const auto new_buffer = detail::MemAlloc<T>(capacity);
+    if (new_buffer == nullptr) {
+        return;
+    }
+    detail::CopyInPlace(std::span{buffer_, size_}, new_buffer);
+    detail::DestructInPlace(this);
+    buffer_ = new_buffer;
+    capacity_ = capacity;
 }
 
 template<class T>
