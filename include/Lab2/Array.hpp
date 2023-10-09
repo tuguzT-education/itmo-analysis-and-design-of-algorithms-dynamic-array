@@ -23,9 +23,8 @@ class Array final {
     using ConstReverseIterator = ConstIterator;
 
     explicit Array();
+    explicit Array(std::nullptr_t);
     explicit Array(SizeType capacity);
-
-    ~Array();
 
     Array(const Array &other);
     Array &operator=(const Array &other);
@@ -46,6 +45,10 @@ class Array final {
 
     void reserve(SizeType capacity);
 
+    Pointer data() noexcept;
+    ConstPointer data() const noexcept;
+    ConstPointer cdata() const noexcept;
+
     Iterator begin() noexcept;
     ConstIterator begin() const noexcept;
     ConstIterator cbegin() const noexcept;
@@ -62,7 +65,11 @@ class Array final {
     ConstReverseIterator rend() const noexcept;
     ConstReverseIterator rcend() const noexcept;
 
+    ~Array();
+
   private:
+    void SwapMembers(Array &other) noexcept;
+
     Pointer buffer_;
     SizeType size_;
     SizeType capacity_;
