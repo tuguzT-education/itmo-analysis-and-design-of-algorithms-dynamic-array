@@ -56,11 +56,11 @@ static inline void DestructInPlace(const std::span<T> span) {
 
 template<class T>
 static inline void ShiftLeftInPlace(T *const src, const std::size_t count) {
-    for (std::size_t i = 0; i < count; ++i) {
+    for (std::size_t i = 0; i < count - 1; ++i) {
         auto current = src + i;
         auto next = current + 1;
-        DestructInPlace(current);
         CopyInPlace(*next, current);
+        DestructInPlace(next);
     }
 }
 
@@ -69,8 +69,8 @@ static inline void ShiftRightInPlace(T *const src, const std::size_t count) {
     for (std::size_t i = count; i > 0; --i) {
         auto current = src + i - 1;
         auto next = current + 1;
-        DestructInPlace(next);
         CopyInPlace(*current, next);
+        DestructInPlace(current);
     }
 }
 
