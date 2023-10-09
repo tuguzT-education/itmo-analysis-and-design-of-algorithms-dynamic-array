@@ -11,10 +11,15 @@ namespace lab2 {
 
 namespace detail {
 
-template<class T>
-static inline constexpr Array<T>::SizeType kDefaultCapacity = 8;
+static inline constexpr std::size_t kDefaultCapacity = 8;
+static inline constexpr float kExponentialGrowthFactor = 2.0f;
 
-static inline constexpr auto kExponentialGrowthFactor = 2.0f;
+static inline constexpr std::size_t EnlargeCapacity(const std::size_t old_capacity) {
+    if (old_capacity == 0) {
+        return detail::kDefaultCapacity;
+    }
+    return static_cast<std::size_t>(static_cast<float>(old_capacity) * detail::kExponentialGrowthFactor);
+}
 
 template<class T>
 static inline T *MemAlloc(const std::size_t capacity) {
@@ -25,7 +30,7 @@ static inline T *MemAlloc(const std::size_t capacity) {
 }
 
 template<class T>
-static inline void CopyInPlace(const T &src, T *dst) {
+static inline void CopyInPlace(const T &src, T *const dst) {
     new(dst) T{src};
 }
 
@@ -38,7 +43,7 @@ static inline void CopyInPlace(const std::span<T> src, T *dst) {
 }
 
 template<class T>
-static inline void DestructInPlace(const T *ptr) {
+static inline void DestructInPlace(T *const ptr) {
     ptr->~T();
 }
 
@@ -49,10 +54,30 @@ static inline void DestructInPlace(const std::span<T> span) {
     }
 }
 
+template<class T>
+static inline void ShiftLeftInPlace(T *const src, const std::size_t count) {
+    for (std::size_t i = 0; i < count; ++i) {
+        auto current = src + i;
+        auto next = current + 1;
+        DestructInPlace(current);
+        CopyInPlace(*next, current);
+    }
 }
 
 template<class T>
-Array<T>::Array() : Array{detail::kDefaultCapacity<T>} {} // NOLINT(*-pro-type-member-init)
+static inline void ShiftRightInPlace(T *const src, const std::size_t count) {
+    for (std::size_t i = count; i > 0; --i) {
+        auto current = src + i - 1;
+        auto next = current + 1;
+        DestructInPlace(next);
+        CopyInPlace(*current, next);
+    }
+}
+
+}
+
+template<class T>
+Array<T>::Array() : Array{detail::kDefaultCapacity} {} // NOLINT(*-pro-type-member-init)
 
 template<class T>
 Array<T>::Array(std::nullptr_t) : Array{std::size_t{0}} {} // NOLINT(*-pro-type-member-init)
@@ -76,45 +101,61 @@ Array<T>::Array(const Array &other) : Array{other.capacity_} { // NOLINT(*-pro-t
 template<class T>
 Array<T> &Array<T>::operator=(const Array &other) {
     Array temp{other};
-    SwapMembers(temp);
+    swap(temp);
     return *this;
 }
 
 template<class T>
 Array<T>::Array(Array &&other) noexcept : Array{nullptr} { // NOLINT(*-pro-type-member-init)
-    SwapMembers(other);
+    swap(other);
 }
 
 template<class T>
 Array<T> &Array<T>::operator=(Array &&other) noexcept {
-    SwapMembers(Array{nullptr});
-    SwapMembers(other);
+    swap(Array{nullptr});
+    swap(other);
     return *this;
 }
 
 template<class T>
 Array<T>::SizeType Array<T>::insert(ConstReference value) {
+    return insert(size_, value);
+}
+
+template<class T>
+Array<T>::SizeType Array<T>::insert(const SizeType index, ConstReference value) {
+    assert_message(index <= size_, "index should not be greater than size");
     if (size_ == capacity_) [[unlikely]] {
-        const auto capacity = capacity_ == 0
-                              ? detail::kDefaultCapacity<T>
-                              : static_cast<SizeType>(capacity_ * detail::kExponentialGrowthFactor);
+        const SizeType capacity = detail::EnlargeCapacity(capacity_);
         reserve(capacity);
         if (size_ == capacity_) {
             return -1;
         }
     }
-    detail::CopyInPlace(value, buffer_ + size_);
-    return size_++;
+    if (index != size_) {
+        detail::ShiftRightInPlace(buffer_ + index, size_ - index);
+    }
+    detail::CopyInPlace(value, buffer_ + index);
+    ++size_;
+    return index;
 }
 
 template<class T>
-Array<T>::ConstReference Array<T>::operator[](const Array::SizeType index) const noexcept {
+void Array<T>::remove(const SizeType index) {
+    assert_message(index < size_, "index should be less than size");
+    detail::DestructInPlace(buffer_ + index);
+    detail::ShiftLeftInPlace(buffer_ + index, size_ - index);
+    --size_;
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::operator[](const SizeType index) const noexcept {
     assert_message(index < size_, "index should be less than size");
     return buffer_[index];
 }
 
 template<class T>
-Array<T>::Reference Array<T>::operator[](const Array::SizeType index) noexcept {
+Array<T>::Reference Array<T>::operator[](const SizeType index) noexcept {
     assert_message(index < size_, "index should be less than size");
     return buffer_[index];
 }
@@ -130,7 +171,7 @@ Array<T>::SizeType Array<T>::capacity() const noexcept {
 }
 
 template<class T>
-void Array<T>::reserve(const Array::SizeType capacity) {
+void Array<T>::reserve(const SizeType capacity) {
     if (capacity <= capacity_) {
         return;
     }
@@ -226,7 +267,7 @@ Array<T>::~Array() {
 }
 
 template<class T>
-void Array<T>::SwapMembers(Array &other) noexcept {
+void Array<T>::swap(Array &other) noexcept {
     std::swap(buffer_, other.buffer_);
     std::swap(size_, other.size_);
     std::swap(capacity_, other.capacity_);
@@ -270,12 +311,12 @@ bool Array<T>::Iterator::isReversed() const noexcept {
 }
 
 template<class T>
-bool Array<T>::Iterator::operator==(const Array<T>::Iterator &other) const {
+bool Array<T>::Iterator::operator==(const Iterator &other) const {
     return current_ == other.current_;
 }
 
 template<class T>
-auto Array<T>::Iterator::operator<=>(const Array<T>::Iterator &other) const {
+auto Array<T>::Iterator::operator<=>(const Iterator &other) const {
     return current_ <=> other.current_;
 }
 
@@ -291,7 +332,7 @@ Array<T>::ConstReference Array<T>::Iterator::operator*() const noexcept {
 
 template<class T>
 typename Array<T>::Iterator &Array<T>::Iterator::operator++() noexcept {
-    const auto direction = isReversed() ? -1 : 1;
+    const Array<T>::DifferenceType direction = isReversed() ? -1 : 1;
     current_ += direction;
     return *this;
 }
@@ -336,12 +377,12 @@ bool Array<T>::ConstIterator::isReversed() const noexcept {
 }
 
 template<class T>
-bool Array<T>::ConstIterator::operator==(const Array<T>::ConstIterator &other) const {
+bool Array<T>::ConstIterator::operator==(const ConstIterator &other) const {
     return current_ == other.current_;
 }
 
 template<class T>
-auto Array<T>::ConstIterator::operator<=>(const Array<T>::ConstIterator &other) const {
+auto Array<T>::ConstIterator::operator<=>(const ConstIterator &other) const {
     return current_ <=> other.current_;
 }
 
@@ -352,7 +393,7 @@ Array<T>::ConstReference Array<T>::ConstIterator::operator*() const noexcept {
 
 template<class T>
 typename Array<T>::ConstIterator &Array<T>::ConstIterator::operator++() noexcept {
-    const auto direction = isReversed() ? -1 : 1;
+    const Array<T>::DifferenceType direction = isReversed() ? -1 : 1;
     current_ += direction;
     return *this;
 }

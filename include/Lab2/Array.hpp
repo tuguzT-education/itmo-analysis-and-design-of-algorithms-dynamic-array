@@ -68,7 +68,7 @@ class Array final {
     ~Array();
 
   private:
-    void SwapMembers(Array &other) noexcept;
+    void swap(Array &other) noexcept;
 
     Pointer buffer_;
     SizeType size_;
