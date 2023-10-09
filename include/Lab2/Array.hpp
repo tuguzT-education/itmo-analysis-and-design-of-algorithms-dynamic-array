@@ -78,19 +78,20 @@ class Array final {
 template<class T>
 class Array<T>::Iterator final {
   public:
-    constexpr explicit Iterator(const Array &array, bool reversed) noexcept;
+    constexpr explicit Iterator(const Array &array, bool reversed, bool end) noexcept;
 
     ConstReference get() const noexcept;
     void set(ConstReference value);
 
     void next() noexcept;
     bool hasNext() const noexcept; // NOLINT(*-use-nodiscard)
+    bool isReversed() const noexcept; // NOLINT(*-use-nodiscard)
 
-    ConstReference operator&() const noexcept;
-    Reference operator&() noexcept;
+    bool operator==(const Iterator &other) const;
+    auto operator<=>(const Iterator &other) const;
 
-    ConstPointer operator*() const noexcept;
-    Pointer operator*() noexcept;
+    Reference operator*() noexcept;
+    ConstReference operator*() const noexcept;
 
     Iterator &operator++() noexcept;
     const Iterator operator++(int) noexcept;
@@ -103,16 +104,18 @@ class Array<T>::Iterator final {
 template<class T>
 class Array<T>::ConstIterator final {
   public:
-    constexpr explicit ConstIterator(const Array &array, bool reversed) noexcept;
+    constexpr explicit ConstIterator(const Array &array, bool reversed, bool end) noexcept;
 
     ConstReference get() const noexcept;
 
     void next() noexcept;
     bool hasNext() const noexcept; // NOLINT(*-use-nodiscard)
+    bool isReversed() const noexcept; // NOLINT(*-use-nodiscard)
 
-    ConstReference operator&() const noexcept;
+    bool operator==(const ConstIterator &other) const;
+    auto operator<=>(const ConstIterator &other) const;
 
-    ConstPointer operator*() const noexcept;
+    ConstReference operator*() const noexcept;
 
     ConstIterator &operator++() noexcept;
     const ConstIterator operator++(int) noexcept;

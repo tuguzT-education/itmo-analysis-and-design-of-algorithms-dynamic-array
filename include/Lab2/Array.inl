@@ -119,12 +119,72 @@ Array<T>::Pointer Array<T>::data() noexcept {
 
 template<class T>
 Array<T>::ConstPointer Array<T>::data() const noexcept {
-    return buffer_;
+    return cdata();
 }
 
 template<class T>
 Array<T>::ConstPointer Array<T>::cdata() const noexcept {
     return buffer_;
+}
+
+template<class T>
+Array<T>::Iterator Array<T>::begin() noexcept {
+    return Iterator{*this, false, false};
+}
+
+template<class T>
+Array<T>::ConstIterator Array<T>::begin() const noexcept {
+    return cbegin();
+}
+
+template<class T>
+Array<T>::ConstIterator Array<T>::cbegin() const noexcept {
+    return ConstIterator{*this, false, false};
+}
+
+template<class T>
+Array<T>::Iterator Array<T>::end() noexcept {
+    return Iterator{*this, false, true};
+}
+
+template<class T>
+Array<T>::ConstIterator Array<T>::end() const noexcept {
+    return cend();
+}
+
+template<class T>
+Array<T>::ConstIterator Array<T>::cend() const noexcept {
+    return ConstIterator{*this, false, true};
+}
+
+template<class T>
+Array<T>::ReverseIterator Array<T>::rbegin() noexcept {
+    return ReverseIterator{*this, true, false};
+}
+
+template<class T>
+Array<T>::ConstReverseIterator Array<T>::rbegin() const noexcept {
+    return rcbegin();
+}
+
+template<class T>
+Array<T>::ConstReverseIterator Array<T>::rcbegin() const noexcept {
+    return ConstReverseIterator{*this, true, false};
+}
+
+template<class T>
+Array<T>::ReverseIterator Array<T>::rend() noexcept {
+    return ReverseIterator{*this, true, true};
+}
+
+template<class T>
+Array<T>::ConstReverseIterator Array<T>::rend() const noexcept {
+    return rcend();
+}
+
+template<class T>
+Array<T>::ConstReverseIterator Array<T>::rcend() const noexcept {
+    return ConstReverseIterator{*this, true, true};
 }
 
 template<class T>
@@ -138,6 +198,138 @@ void Array<T>::SwapMembers(Array &other) noexcept {
     std::swap(buffer_, other.buffer_);
     std::swap(size_, other.size_);
     std::swap(capacity_, other.capacity_);
+}
+
+template<class T>
+constexpr Array<T>::Iterator::Iterator(const Array &array, const bool reversed, const bool end) noexcept {
+    current_ = array.buffer_;
+    end_ = array.buffer_ + array.size_;
+    if (reversed) {
+        std::swap(current_, end_);
+    }
+    if (end) {
+        current_ = end_;
+    }
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::Iterator::get() const noexcept {
+    return *current_;
+}
+
+template<class T>
+void Array<T>::Iterator::set(ConstReference value) {
+    *current_ = value;
+}
+
+template<class T>
+void Array<T>::Iterator::next() noexcept {
+    operator++();
+}
+
+template<class T>
+bool Array<T>::Iterator::hasNext() const noexcept {
+    return current_ != end_;
+}
+
+template<class T>
+bool Array<T>::Iterator::isReversed() const noexcept {
+    return current_ > end_;
+}
+
+template<class T>
+bool Array<T>::Iterator::operator==(const Array<T>::Iterator &other) const {
+    return current_ == other.current_;
+}
+
+template<class T>
+auto Array<T>::Iterator::operator<=>(const Array<T>::Iterator &other) const {
+    return current_ <=> other.current_;
+}
+
+template<class T>
+Array<T>::Reference Array<T>::Iterator::operator*() noexcept {
+    return *current_;
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::Iterator::operator*() const noexcept {
+    return *current_;
+}
+
+template<class T>
+typename Array<T>::Iterator &Array<T>::Iterator::operator++() noexcept {
+    const auto direction = isReversed() ? -1 : 1;
+    current_ += direction;
+    return *this;
+}
+
+template<class T>
+const typename Array<T>::Iterator Array<T>::Iterator::operator++(int) noexcept { // NOLINT(*-const-return-type)
+    Iterator old{*this};
+    operator++();
+    return old;
+}
+
+template<class T>
+constexpr Array<T>::ConstIterator::ConstIterator(const Array &array, const bool reversed, const bool end) noexcept {
+    current_ = array.buffer_;
+    end_ = array.buffer_ + array.size_;
+    if (reversed) {
+        std::swap(current_, end_);
+    }
+    if (end) {
+        current_ = end_;
+    }
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::ConstIterator::get() const noexcept {
+    return *current_;
+}
+
+template<class T>
+void Array<T>::ConstIterator::next() noexcept {
+    operator++();
+}
+
+template<class T>
+bool Array<T>::ConstIterator::hasNext() const noexcept {
+    return current_ != end_;
+}
+
+template<class T>
+bool Array<T>::ConstIterator::isReversed() const noexcept {
+    return current_ > end_;
+}
+
+template<class T>
+bool Array<T>::ConstIterator::operator==(const Array<T>::ConstIterator &other) const {
+    return current_ == other.current_;
+}
+
+template<class T>
+auto Array<T>::ConstIterator::operator<=>(const Array<T>::ConstIterator &other) const {
+    return current_ <=> other.current_;
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::ConstIterator::operator*() const noexcept {
+    return *current_;
+}
+
+template<class T>
+typename Array<T>::ConstIterator &Array<T>::ConstIterator::operator++() noexcept {
+    const auto direction = isReversed() ? -1 : 1;
+    current_ += direction;
+    return *this;
+}
+
+template<class T>
+const typename Array<T>::ConstIterator Array<T>::ConstIterator::operator++(int) noexcept { // NOLINT(*-const-return-type)
+    Iterator old{*this};
+    operator++();
+    return old;
 }
 
 }
