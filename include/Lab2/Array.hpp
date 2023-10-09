@@ -40,8 +40,8 @@ class Array final {
     ConstReference operator[](SizeType index) const noexcept;
     Reference operator[](SizeType index) noexcept;
 
-    SizeType size() const noexcept;
-    SizeType capacity() const noexcept;
+    SizeType size() const noexcept; // NOLINT(*-use-nodiscard)
+    SizeType capacity() const noexcept; // NOLINT(*-use-nodiscard)
 
     void reserve(SizeType capacity);
 
@@ -84,7 +84,7 @@ class Array<T>::Iterator final {
     void set(ConstReference value);
 
     void next() noexcept;
-    bool hasNext() const noexcept;
+    bool hasNext() const noexcept; // NOLINT(*-use-nodiscard)
 
     ConstReference operator&() const noexcept;
     Reference operator&() noexcept;
@@ -93,7 +93,7 @@ class Array<T>::Iterator final {
     Pointer operator*() noexcept;
 
     Iterator &operator++() noexcept;
-    Iterator operator++(int) noexcept;
+    const Iterator operator++(int) noexcept;
 
   private:
     Pointer current_;
@@ -108,14 +108,14 @@ class Array<T>::ConstIterator final {
     ConstReference get() const noexcept;
 
     void next() noexcept;
-    bool hasNext() const noexcept;
+    bool hasNext() const noexcept; // NOLINT(*-use-nodiscard)
 
     ConstReference operator&() const noexcept;
 
     ConstPointer operator*() const noexcept;
 
     ConstIterator &operator++() noexcept;
-    ConstIterator operator++(int) noexcept;
+    const ConstIterator operator++(int) noexcept;
 
   private:
     Pointer current_;

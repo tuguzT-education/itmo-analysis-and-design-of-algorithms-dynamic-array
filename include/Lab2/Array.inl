@@ -2,7 +2,10 @@
 #define LAB2_ARRAY_INL
 
 #include <cstdlib>
+#include <cassert>
 #include <span>
+
+#define assert_message(expr, msg) assert((expr) && msg)
 
 namespace lab2 {
 
@@ -82,7 +85,46 @@ Array<T>::Array(Array &&other) noexcept : Array{nullptr} { // NOLINT(*-pro-type-
 
 template<class T>
 Array<T> &Array<T>::operator=(Array &&other) noexcept {
+    SwapMembers(Array{nullptr});
     SwapMembers(other);
+    return *this;
+}
+
+template<class T>
+Array<T>::ConstReference Array<T>::operator[](const Array::SizeType index) const noexcept {
+    assert_message(index < size_, "index should be less than size");
+    return buffer_[index];
+}
+
+template<class T>
+Array<T>::Reference Array<T>::operator[](const Array::SizeType index) noexcept {
+    assert_message(index < size_, "index should be less than size");
+    return buffer_[index];
+}
+
+template<class T>
+Array<T>::SizeType Array<T>::size() const noexcept {
+    return size_;
+}
+
+template<class T>
+Array<T>::SizeType Array<T>::capacity() const noexcept {
+    return capacity_;
+}
+
+template<class T>
+Array<T>::Pointer Array<T>::data() noexcept {
+    return buffer_;
+}
+
+template<class T>
+Array<T>::ConstPointer Array<T>::data() const noexcept {
+    return buffer_;
+}
+
+template<class T>
+Array<T>::ConstPointer Array<T>::cdata() const noexcept {
+    return buffer_;
 }
 
 template<class T>
@@ -99,5 +141,7 @@ void Array<T>::SwapMembers(Array &other) noexcept {
 }
 
 }
+
+#undef assert_message
 
 #endif //LAB2_ARRAY_INL
