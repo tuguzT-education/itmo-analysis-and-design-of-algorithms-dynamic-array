@@ -278,7 +278,7 @@ constexpr Array<T>::Iterator::Iterator(const Array &array, const bool reversed, 
     current_ = array.buffer_;
     end_ = array.buffer_ + array.size_;
     if (reversed) {
-        std::swap(current_, end_);
+        std::swap(--current_, --end_);
     }
     if (end) {
         current_ = end_;
@@ -349,7 +349,7 @@ constexpr Array<T>::ConstIterator::ConstIterator(const Array &array, const bool 
     current_ = array.buffer_;
     end_ = array.buffer_ + array.size_;
     if (reversed) {
-        std::swap(current_, end_);
+        std::swap(--current_, --end_);
     }
     if (end) {
         current_ = end_;
