@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <span>
+#include <concepts>
 
 #define assert_message(expr, msg) assert((expr) && msg)
 
@@ -29,17 +30,60 @@ static inline T *MemAlloc(const std::size_t capacity) {
     return static_cast<T *>(std::malloc(sizeof(T) * capacity));
 }
 
+template<class T, class... Args>
+static inline T &ConstructInPlace(T *dst, Args &&... args);
+
 template<class T>
-static inline void CopyInPlace(const T &src, T *const dst) {
-    new(dst) T{src};
+static inline T &CopyInPlace(T *const dst, const T &src) {
+    return ConstructInPlace(dst, src);
 }
 
 template<class T>
-static inline void CopyInPlace(const std::span<T> src, T *dst) {
-    for (const auto &item : src) {
-        CopyInPlace(item, dst);
-        ++dst;
+static inline std::span<T> CopyInPlace(T *const dst, const std::span<T> src) {
+    for (auto it = dst; const auto &item : src) {
+        CopyInPlace(it, item);
+        it += 1;
     }
+    return std::span{dst, src.size()};
+}
+
+template<class T>
+static inline T &MoveInPlace(T *const dst, T &&src) {
+    return ConstructInPlace(dst, std::forward<T>(src));
+}
+
+template<class T>
+static inline std::span<T> MoveInPlace(T *const dst, const std::span<T> src) {
+    for (auto it = dst; auto &item : src) {
+        MoveInPlace(it, std::move(item));
+        it += 1;
+    }
+    return std::span{dst, src.size()};
+}
+
+template<class T, class... Args>
+T &ConstructInPlace(T *const dst, Args &&... args) {
+    return *new(dst) T{std::forward<Args>(args)...};
+}
+
+template<class T>
+static inline std::span<T> ConstructInPlace(T *const dst, const std::span<T> src) {
+    return CopyInPlace(dst, src);
+}
+
+template<std::movable T>
+static inline std::span<T> ConstructInPlace(T *const dst, const std::span<T> src) {
+    return MoveInPlace(dst, src);
+}
+
+template<class T>
+static inline T &ConstructInPlace(T *const dst, T *const src) {
+    return CopyInPlace(dst, *src);
+}
+
+template<std::movable T>
+static inline T &ConstructInPlace(T *const dst, T *const src) {
+    return MoveInPlace(dst, std::move(*src));
 }
 
 template<class T>
@@ -59,7 +103,7 @@ static inline void ShiftLeftInPlace(T *const src, const std::size_t count) {
     for (std::size_t i = 0; i < count - 1; ++i) {
         auto current = src + i;
         auto next = current + 1;
-        CopyInPlace(*next, current);
+        ConstructInPlace(current, next);
         DestructInPlace(next);
     }
 }
@@ -69,7 +113,7 @@ static inline void ShiftRightInPlace(T *const src, const std::size_t count) {
     for (std::size_t i = count; i > 0; --i) {
         auto current = src + i - 1;
         auto next = current + 1;
-        CopyInPlace(*current, next);
+        ConstructInPlace(next, current);
         DestructInPlace(current);
     }
 }
@@ -93,7 +137,7 @@ Array<T>::Array(const SizeType capacity) : size_{0}, capacity_{0} {
 template<class T>
 Array<T>::Array(const Array &other) : Array{other.capacity_} { // NOLINT(*-pro-type-member-init)
     if (buffer_ != nullptr) {
-        detail::CopyInPlace(std::span{other.buffer_, other.size_}, buffer_);
+        detail::CopyInPlace(buffer_, std::span{other.buffer_, other.size_});
         size_ = other.size_;
     }
 }
@@ -119,11 +163,23 @@ Array<T> &Array<T>::operator=(Array &&other) noexcept {
 
 template<class T>
 Array<T>::SizeType Array<T>::insert(ConstReference value) {
-    return insert(size_, value);
+    return emplace(value);
 }
 
 template<class T>
 Array<T>::SizeType Array<T>::insert(const SizeType index, ConstReference value) {
+    return emplace(index, value);
+}
+
+template<class T>
+template<class... Args>
+Array<T>::SizeType Array<T>::emplace(Args &&... args) {
+    return emplace(size_, std::forward<Args>(args)...);
+}
+
+template<class T>
+template<class... Args>
+Array<T>::SizeType Array<T>::emplace(const SizeType index, Args &&... args) {
     assert_message(index <= size_, "index should not be greater than size");
     if (size_ == capacity_) [[unlikely]] {
         const SizeType capacity = detail::EnlargeCapacity(capacity_);
@@ -135,7 +191,7 @@ Array<T>::SizeType Array<T>::insert(const SizeType index, ConstReference value) 
     if (index != size_) {
         detail::ShiftRightInPlace(buffer_ + index, size_ - index);
     }
-    detail::CopyInPlace(value, buffer_ + index);
+    detail::ConstructInPlace(buffer_ + index, std::forward<Args>(args)...);
     ++size_;
     return index;
 }
@@ -179,7 +235,7 @@ void Array<T>::reserve(const SizeType capacity) {
     if (new_buffer == nullptr) {
         return;
     }
-    detail::CopyInPlace(std::span{buffer_, size_}, new_buffer);
+    detail::ConstructInPlace(new_buffer, std::span{buffer_, size_});
     detail::DestructInPlace(this);
     buffer_ = new_buffer;
     capacity_ = capacity;

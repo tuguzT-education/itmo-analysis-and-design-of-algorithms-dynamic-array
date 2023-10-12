@@ -35,6 +35,12 @@ class Array final {
     SizeType insert(ConstReference value);
     SizeType insert(SizeType index, ConstReference value);
 
+    template<class... Args>
+    SizeType emplace(Args &&... args);
+
+    template<class... Args>
+    SizeType emplace(SizeType index, Args &&... args);
+
     void remove(SizeType index);
 
     ConstReference operator[](SizeType index) const noexcept;
