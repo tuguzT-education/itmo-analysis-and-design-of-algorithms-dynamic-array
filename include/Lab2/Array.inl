@@ -356,7 +356,10 @@ void Array<T>::Iterator::next() noexcept {
 
 template<class T>
 bool Array<T>::Iterator::hasNext() const noexcept {
-    return current_ != end_;
+    if (isReversed()) {
+        return (current_ - 1) > end_;
+    }
+    return (current_ + 1) < end_;
 }
 
 template<class T>
@@ -386,7 +389,7 @@ Array<T>::ConstReference Array<T>::Iterator::operator*() const noexcept {
 
 template<class T>
 typename Array<T>::Iterator &Array<T>::Iterator::operator++() noexcept {
-    const Array<T>::DifferenceType direction = isReversed() ? -1 : 1;
+    const DifferenceType direction = isReversed() ? -1 : 1;
     current_ += direction;
     return *this;
 }
@@ -422,7 +425,10 @@ void Array<T>::ConstIterator::next() noexcept {
 
 template<class T>
 bool Array<T>::ConstIterator::hasNext() const noexcept {
-    return current_ != end_;
+    if (isReversed()) {
+        return (current_ - 1) > end_;
+    }
+    return (current_ + 1) < end_;
 }
 
 template<class T>
@@ -447,7 +453,7 @@ Array<T>::ConstReference Array<T>::ConstIterator::operator*() const noexcept {
 
 template<class T>
 typename Array<T>::ConstIterator &Array<T>::ConstIterator::operator++() noexcept {
-    const Array<T>::DifferenceType direction = isReversed() ? -1 : 1;
+    const DifferenceType direction = isReversed() ? -1 : 1;
     current_ += direction;
     return *this;
 }
