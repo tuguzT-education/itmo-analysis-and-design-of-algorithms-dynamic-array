@@ -188,9 +188,7 @@ Array<T>::SizeType Array<T>::emplace(const SizeType index, Args &&... args) {
             return -1;
         }
     }
-    if (index != size_) {
-        detail::ShiftRightInPlace(buffer_ + index, size_ - index);
-    }
+    detail::ShiftRightInPlace(buffer_ + index, size_ - index);
     detail::ConstructInPlace(buffer_ + index, std::forward<Args>(args)...);
     ++size_;
     return index;

@@ -17,5 +17,7 @@ macro(add_google_test TEST_NAME TEST_ARGS)
     gtest_discover_tests(${TEST_NAME})
 endmacro()
 
-add_google_test(insert_test InsertTest.cpp)
 add_google_test(empty_array_test EmptyArrayTest.cpp)
+add_google_test(insert_test InsertTest.cpp)
+add_google_test(remove_test RemoveTest.cpp)
+add_google_test(reserve_test ReserveTest.cpp)
