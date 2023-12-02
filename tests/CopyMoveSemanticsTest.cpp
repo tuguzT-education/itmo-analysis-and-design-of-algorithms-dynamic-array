@@ -52,3 +52,23 @@ GTEST_TEST(CopyMoveSemanticsTest, MovableOnly) {
     array.remove(0);
     GTEST_ASSERT_EQ(array.size(), 0);
 }
+
+GTEST_TEST(CopyMoveSemanticsTest, Strings) {
+    lab2::Array<std::string> array;
+
+    array.emplace("Hello, World!");
+    GTEST_ASSERT_EQ(array[0], "Hello, World!");
+
+    array[0] += " New string!";
+    GTEST_ASSERT_EQ(array[0], "Hello, World! New string!");
+
+    array.insert("The second one...");
+    GTEST_ASSERT_EQ(array[1], "The second one...");
+
+    array.remove(0);
+    GTEST_ASSERT_EQ(array.size(), 1);
+    GTEST_ASSERT_EQ(array[0], "The second one...");
+
+    array.remove(0);
+    GTEST_ASSERT_EQ(array.size(), 0);
+}
